@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Hotel Reservation SaaS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <link href="dashboard.css" rel="stylesheet">
+</head>
+<body>
+    <nav id="navbar"></nav>
+    
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 dashboard-sidebar">
+                <div class="p-3">
+                    <ul class="dashboard-nav">
+                        <li><a href="#" class="active" onclick="showAdminSection('overview')"><i class="fas fa-tachometer-alt"></i>Overview</a></li>
+                        <li><a href="#" onclick="showAdminSection('users')"><i class="fas fa-users"></i>Users</a></li>
+                        <li><a href="#" onclick="showAdminSection('hotels')"><i class="fas fa-hotel"></i>Hotels</a></li>
+                        <li><a href="#" onclick="showAdminSection('bookings')"><i class="fas fa-calendar-check"></i>Bookings</a></li>
+                        <li><a href="#" onclick="showAdminSection('analytics')"><i class="fas fa-chart-bar"></i>Analytics</a></li>
+                        <li><a href="#" onclick="showAdminSection('settings')"><i class="fas fa-cog"></i>Settings</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 dashboard-content">
+                <div class="dashboard-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 id="sectionTitle">Admin Dashboard</h2>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="exportData()">
+                                <i class="fas fa-download me-2"></i>Export Data
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="systemSettings()">
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="dashboardContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="dashboard.js"></script>
+    <script src="main.js"></script>
+    
+    <script>
+        // Admin Dashboard Functions
+        function showAdminSection(section) {
+            // Update active nav
+            document.querySelectorAll('.dashboard-nav a').forEach(a => a.classList.remove('active'));
+            event?.target.classList.add('active');
+            
+            const content = document.getElementById('dashboardContent');
+            const title = document.getElementById('sectionTitle');
+            
+            switch(section) {
+                case 'overview':
+                    title.textContent = 'Admin Dashboard';
+                    showAdminOverview(content);
+                    break;
+                case 'users':
+                    title.textContent = 'User Management';
+                    showUserManagement(content);
+                    break;
+                case 'hotels':
+                    title.textContent = 'Hotel Management';
+                    showHotelManagement(content);
+                    break;
+                case 'bookings':
+                    title.textContent = 'Booking Management';
+                    showBookingManagement(content);
+                    break;
+                case 'analytics':
+                    title.textContent = 'System Analytics';
+                    showSystemAnalytics(content);
+                    break;
+                case 'settings':
+                    title.textContent = 'System Settings';
+                    showSystemSettings(content);
+                    break;
+            }
+        }
+        
+        function showAdminOverview(content) {
+            const allUsers = JSON.parse(localStorage.getItem('users') || '[]');
+            const allBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            const totalRevenue = allBookings.reduce((sum, b) => sum + b.totalPrice, 0);
+            const platformFee = totalRevenue * 0.1; // 10% platform fee
+            
+            content.innerHTML = `
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-users stat-icon"></i>
+                                <h3>${allUsers.length}</h3>
+                                <p class="mb-0">Total Users</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-hotel stat-icon"></i>
+                                <h3>${dummyData.hotels.length}</h3>
+                                <p class="mb-0">Total Hotels</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-calendar-check stat-icon"></i>
+                                <h3>${allBookings.length}</h3>
+                                <p class="mb-0">Total Bookings</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-dollar-sign stat-icon"></i>
+                                <h3>${utils.formatCurrency(platformFee)}</h3>
+                                <p class="mb-0">Platform Revenue</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h5>Recent Activity</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Type</th>
+                                                <th>Description</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${allBookings.slice(0, 5).map(booking => {
+                                                const hotel = dummyData.hotels.find(h => h.id === booking.hotelId);
+                                                return `
+                                                    <tr>
+                                                        <td><i class="fas fa-calendar-check text-primary"></i> Booking</td>
+                                                        <td>New booking at ${hotel?.name}</td>
+                                                        <td>${utils.formatDate(booking.bookingDate)}</td>
+                                                        <td><span class="status-badge status-${booking.status}">${booking.status}</span></td>
+                                                    </tr>
+                                                `;
+                                            }).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h5>System Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Server Status</span>
+                                        <span class="text-success"><i class="fas fa-circle"></i> Online</span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Database</span>
+                                        <span class="text-success"><i class="fas fa-circle"></i> Connected</span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Payment Gateway</span>
+                                        <span class="text-success"><i class="fas fa-circle"></i> Active</span>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Email Service</span>
+                                        <span class="text-success"><i class="fas fa-circle"></i> Running</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h5>Quick Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-primary" onclick="showAdminSection('users')">
+                                        <i class="fas fa-users me-2"></i>Manage Users
+                                    </button>
+                                    <button class="btn btn-outline-primary" onclick="showAdminSection('hotels')">
+                                        <i class="fas fa-hotel me-2"></i>Manage Hotels
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="exportData()">
+                                        <i class="fas fa-download me-2"></i>Export Reports
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showUserManagement(content) {
+            const allUsers = JSON.parse(localStorage.getItem('users') || '[]');
+            
+            content.innerHTML = `
+                <div class="dashboard-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>All Users</h5>
+                        <button class="btn btn-primary" onclick="addNewUser()">
+                            <i class="fas fa-plus me-2"></i>Add User
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${allUsers.map(user => `
+                                        <tr>
+                                            <td>${user.id}</td>
+                                            <td>${user.name}</td>
+                                            <td>${user.email}</td>
+                                            <td><span class="badge bg-primary">${user.role}</span></td>
+                                            <td>${utils.formatDate(user.createdAt)}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="editUser(${user.id})">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteUser(${user.id})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showHotelManagement(content) {
+            content.innerHTML = `
+                <div class="dashboard-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>All Hotels</h5>
+                        <button class="btn btn-primary" onclick="addNewHotel()">
+                            <i class="fas fa-plus me-2"></i>Add Hotel
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Location</th>
+                                        <th>Rating</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${dummyData.hotels.map(hotel => `
+                                        <tr>
+                                            <td>${hotel.id}</td>
+                                            <td>${hotel.name}</td>
+                                            <td>${hotel.location}</td>
+                                            <td>${hotel.rating} ⭐</td>
+                                            <td>${utils.formatCurrency(hotel.price)}</td>
+                                            <td><span class="badge bg-success">Active</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="editHotel(${hotel.id})">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-info ms-1" onclick="viewHotelDetails(${hotel.id})">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showBookingManagement(content) {
+            const allBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+            
+            content.innerHTML = `
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h5>All Bookings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Confirmation #</th>
+                                        <th>Guest</th>
+                                        <th>Hotel</th>
+                                        <th>Dates</th>
+                                        <th>Status</th>
+                                        <th>Total</th>
+                                        <th>Platform Fee</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${allBookings.map(booking => {
+                                        const hotel = dummyData.hotels.find(h => h.id === booking.hotelId);
+                                        const platformFee = booking.totalPrice * 0.1;
+                                        return `
+                                            <tr>
+                                                <td><strong>${booking.confirmationNumber}</strong></td>
+                                                <td>${booking.guestInfo?.firstName} ${booking.guestInfo?.lastName}</td>
+                                                <td>${hotel?.name}</td>
+                                                <td>${utils.formatDate(booking.checkinDate)} - ${utils.formatDate(booking.checkoutDate)}</td>
+                                                <td><span class="status-badge status-${booking.status}">${booking.status}</span></td>
+                                                <td>${utils.formatCurrency(booking.totalPrice)}</td>
+                                                <td>${utils.formatCurrency(platformFee)}</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="viewBookingDetails(${booking.id})">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showSystemAnalytics(content) {
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h5>Revenue Analytics</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <p class="text-center text-muted">Revenue chart would be displayed here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h5>User Growth</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <p class="text-center text-muted">User growth chart would be displayed here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h5>Booking Trends</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <p class="text-center text-muted">Booking trends chart would be displayed here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h5>Popular Destinations</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <p class="text-center text-muted">Popular destinations chart would be displayed here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showSystemSettings(content) {
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h5>Platform Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form>
+                                    <div class="mb-3">
+                                        <label class="form-label">Platform Fee (%)</label>
+                                        <input type="number" class="form-control" value="10" min="0" max="100">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Currency</label>
+                                        <select class="form-select">
+                                            <option value="USD">USD - US Dollar</option>
+                                            <option value="EUR">EUR - Euro</option>
+                                            <option value="GBP">GBP - British Pound</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="maintenanceMode">
+                                            <label class="form-check-label" for="maintenanceMode">
+                                                Maintenance Mode
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="dashboard-card">
+                            <div class="card-header">
+                                <h5>Email Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form>
+                                    <div class="mb-3">
+                                        <label class="form-label">SMTP Server</label>
+                                        <input type="text" class="form-control" value="smtp.example.com">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">SMTP Port</label>
+                                        <input type="number" class="form-control" value="587">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">From Email</label>
+                                        <input type="email" class="form-control" value="noreply@hotelsaas.com">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Utility functions
+        function addNewUser() {
+            alert('Add New User functionality would be implemented here');
+        }
+        
+        function editUser(userId) {
+            alert(`Edit User ${userId} functionality would be implemented here`);
+        }
+        
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                alert(`Delete User ${userId} functionality would be implemented here`);
+            }
+        }
+        
+        function viewHotelDetails(hotelId) {
+            window.open(`hotel-details.html?id=${hotelId}`, '_blank');
+        }
+        
+        function exportData() {
+            alert('Export Data functionality would be implemented here');
+        }
+        
+        function systemSettings() {
+            showAdminSection('settings');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Connectivity Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .loading { background-color: #cce7ff; border: 1px solid #99d6ff; color: #004085; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">🔍 Hotel System Connectivity Test</h1>
+        
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Frontend ↔ Backend Connectivity Tests</h3>
+                    </div>
+                    <div class="card-body">
+                        <button id="runTests" class="btn btn-primary mb-3">Run All Tests</button>
+                        <div id="testResults"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000';
+        
+        class ConnectivityTester {
+            constructor() {
+                this.results = [];
+            }
+
+            addResult(test, status, message, details = '') {
+                const result = { test, status, message, details, timestamp: new Date() };
+                this.results.push(result);
+                this.displayResult(result);
+            }
+
+            displayResult(result) {
+                const resultsDiv = document.getElementById('testResults');
+                const statusClass = result.status === 'success' ? 'success' : 
+                                  result.status === 'error' ? 'error' : 
+                                  result.status === 'warning' ? 'warning' : 'loading';
+                
+                const icon = result.status === 'success' ? '✅' : 
+                           result.status === 'error' ? '❌' : 
+                           result.status === 'warning' ? '⚠️' : '🔄';
+
+                const resultHtml = `
+                    <div class="test-result ${statusClass}">
+                        <strong>${icon} ${result.test}</strong><br>
+                        ${result.message}
+                        ${result.details ? `<br><small>${result.details}</small>` : ''}
+                    </div>
+                `;
+                resultsDiv.innerHTML += resultHtml;
+            }
+
+            async testBackendConnection() {
+                this.addResult('Backend Connection', 'loading', 'Testing backend server...');
+                
+                try {
+                    const response = await fetch(`${API_BASE}/`);
+                    if (response.ok) {
+                        const text = await response.text();
+                        this.addResult('Backend Connection', 'success', 'Backend server is running', `Response: ${text}`);
+                        return true;
+                    } else {
+                        this.addResult('Backend Connection', 'error', `Server responded with status ${response.status}`);
+                        return false;
+                    }
+                } catch (error) {
+                    this.addResult('Backend Connection', 'error', 'Cannot connect to backend server', `Error: ${error.message}`);
+                    return false;
+                }
+            }
+
+            async testHotelsAPI() {
+                this.addResult('Hotels API', 'loading', 'Testing hotels endpoint...');
+                
+                try {
+                    const response = await fetch(`${API_BASE}/api/hotels`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.addResult('Hotels API', 'success', `Hotels API working - Found ${data.length || 0} hotels`);
+                        return true;
+                    } else {
+                        this.addResult('Hotels API', 'error', `Hotels API failed with status ${response.status}`);
+                        return false;
+                    }
+                } catch (error) {
+                    this.addResult('Hotels API', 'error', 'Hotels API connection failed', `Error: ${error.message}`);
+                    return false;
+                }
+            }
+
+            async testAuthAPI() {
+                this.addResult('Auth API', 'loading', 'Testing authentication endpoint...');
+                
+                try {
+                    // Test login endpoint with invalid credentials (should return error but not crash)
+                    const response = await fetch(`${API_BASE}/api/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: 'test@test.com', password: 'test' })
+                    });
+                    
+                    // Any response (even error) means the endpoint is working
+                    this.addResult('Auth API', 'success', `Auth API responding (Status: ${response.status})`);
+                    return true;
+                } catch (error) {
+                    this.addResult('Auth API', 'error', 'Auth API connection failed', `Error: ${error.message}`);
+                    return false;
+                }
+            }
+
+            async testBookingsAPI() {
+                this.addResult('Bookings API', 'loading', 'Testing bookings endpoint...');
+                
+                try {
+                    const response = await fetch(`${API_BASE}/api/bookings`);
+                    // Even if it returns 401 (unauthorized), it means the endpoint exists
+                    if (response.status === 401 || response.status === 200) {
+                        this.addResult('Bookings API', 'success', 'Bookings API endpoint is accessible');
+                        return true;
+                    } else {
+                        this.addResult('Bookings API', 'warning', `Bookings API returned status ${response.status}`);
+                        return false;
+                    }
+                } catch (error) {
+                    this.addResult('Bookings API', 'error', 'Bookings API connection failed', `Error: ${error.message}`);
+                    return false;
+                }
+            }
+
+            async testLocalStorage() {
+                this.addResult('Local Storage', 'loading', 'Testing browser storage...');
+                
+                try {
+                    // Test localStorage functionality
+                    localStorage.setItem('test', 'connectivity-test');
+                    const testValue = localStorage.getItem('test');
+                    localStorage.removeItem('test');
+                    
+                    if (testValue === 'connectivity-test') {
+                        this.addResult('Local Storage', 'success', 'Browser local storage is working');
+                        return true;
+                    } else {
+                        this.addResult('Local Storage', 'error', 'Local storage test failed');
+                        return false;
+                    }
+                } catch (error) {
+                    this.addResult('Local Storage', 'error', 'Local storage not available', `Error: ${error.message}`);
+                    return false;
+                }
+            }
+
+            async testCORS() {
+                this.addResult('CORS Policy', 'loading', 'Testing cross-origin requests...');
+                
+                try {
+                    const response = await fetch(`${API_BASE}/`, {
+                        method: 'OPTIONS'
+                    });
+                    
+                    const corsHeaders = response.headers.get('Access-Control-Allow-Origin');
+                    if (corsHeaders || response.ok) {
+                        this.addResult('CORS Policy', 'success', 'CORS is properly configured');
+                        return true;
+                    } else {
+                        this.addResult('CORS Policy', 'warning', 'CORS might need configuration for production');
+                        return false;
+                    }
+                } catch (error) {
+                    this.addResult('CORS Policy', 'warning', 'CORS test inconclusive', `Error: ${error.message}`);
+                    return false;
+                }
+            }
+
+            async runAllTests() {
+                document.getElementById('testResults').innerHTML = '';
+                this.results = [];
+                
+                this.addResult('System Test', 'loading', 'Starting comprehensive connectivity tests...');
+                
+                const backendOk = await this.testBackendConnection();
+                
+                if (backendOk) {
+                    await this.testHotelsAPI();
+                    await this.testAuthAPI();
+                    await this.testBookingsAPI();
+                    await this.testCORS();
+                } else {
+                    this.addResult('API Tests', 'error', 'Skipping API tests - backend not accessible');
+                }
+                
+                await this.testLocalStorage();
+                
+                this.generateSummary();
+            }
+
+            generateSummary() {
+                const successCount = this.results.filter(r => r.status === 'success').length;
+                const errorCount = this.results.filter(r => r.status === 'error').length;
+                const warningCount = this.results.filter(r => r.status === 'warning').length;
+                const totalTests = this.results.length - 1; // Exclude the initial "Starting" message
+                
+                const successRate = ((successCount / totalTests) * 100).toFixed(1);
+                
+                let summaryStatus = 'success';
+                let summaryMessage = '';
+                
+                if (errorCount === 0 && warningCount === 0) {
+                    summaryMessage = `🎉 All tests passed! System is fully operational (${successRate}% success rate)`;
+                } else if (errorCount === 0) {
+                    summaryStatus = 'warning';
+                    summaryMessage = `⚠️ System mostly operational with ${warningCount} warnings (${successRate}% success rate)`;
+                } else {
+                    summaryStatus = 'error';
+                    summaryMessage = `❌ System has ${errorCount} critical issues and ${warningCount} warnings (${successRate}% success rate)`;
+                }
+                
+                this.addResult('Final Summary', summaryStatus, summaryMessage, 
+                    `Tests: ${totalTests} | Success: ${successCount} | Warnings: ${warningCount} | Errors: ${errorCount}`);
+            }
+        }
+
+        // Initialize tester
+        const tester = new ConnectivityTester();
+        
+        document.getElementById('runTests').addEventListener('click', () => {
+            tester.runAllTests();
+        });
+
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => tester.runAllTests(), 1000);
+        });
+    </script>
+</body>
+</html>
