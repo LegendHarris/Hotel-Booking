@@ -1,11 +1,39 @@
-// Enhanced Frontend Fetch Examples with Email Verification
+// Enhanced Frontend Fetch Examples with Reliability Features
 
 const API_BASE = "http://localhost:3002/api";
 
-// Example 1: User Signup (sends verification email)
+// Retry function for failed requests
+async function retryFetch(url, options = {}, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.ok) return response;
+      
+      if (attempt === maxRetries) throw new Error(`Request failed after ${maxRetries} attempts`);
+      
+      // Wait before retry with exponential backoff
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+    }
+  }
+}
+
+// Health check function
+async function checkServerHealth() {
+  try {
+    const response = await fetch(`${API_BASE}/health`);
+    return await response.json();
+  } catch (error) {
+    return { success: false, message: 'Server unavailable' };
+  }
+}
+
+// Example 1: User Signup (sends verification email) with retry
 async function signup(email, password, firstName, lastName, phone) {
   try {
-    const response = await fetch(`${API_BASE}/auth/signup`, {
+    const response = await retryFetch(`${API_BASE}/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
@@ -66,16 +94,17 @@ async function login(email, password) {
   }
 }
 
-// Example 4: Get All Hotels with Filters
+// Example 4: Get All Hotels with Filters (cached)
 async function getHotels(filters = {}) {
   const queryParams = new URLSearchParams(filters);
   try {
-    const response = await fetch(`${API_BASE}/hotels?${queryParams}`);
+    const response = await retryFetch(`${API_BASE}/hotels?${queryParams}`);
     const data = await response.json();
-    console.log("Hotels:", data);
+    console.log("Hotels (Cache:", response.headers.get('X-Cache') || 'MISS', "):", data);
     return data;
   } catch (error) {
     console.error("Get hotels error:", error);
+    return { success: false, message: error.message };
   }
 }
 

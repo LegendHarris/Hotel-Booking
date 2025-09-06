@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const { pool } = require('../middleware/performance');
+const { reliableQuery } = require('../middleware/reliability');
 
 class EnhancedUser {
   static async create(userData) {
@@ -13,19 +13,19 @@ class EnhancedUser {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
-    const [result] = await pool.execute(sql, [email, hashedPassword, role, first_name, last_name, phone, is_verified, verification_code]);
+    const result = await reliableQuery(sql, [email, hashedPassword, role, first_name, last_name, phone, is_verified, verification_code]);
     return result;
   }
 
   static async findByEmail(email) {
     const sql = 'SELECT id, email, role, first_name, last_name, phone, created_at FROM users WHERE email = ? AND is_active = TRUE LIMIT 1';
-    const [results] = await pool.execute(sql, [email]);
+    const results = await reliableQuery(sql, [email]);
     return results[0] || null;
   }
 
   static async findByEmailWithVerification(email) {
     const sql = 'SELECT * FROM users WHERE email = ? AND is_active = TRUE LIMIT 1';
-    const [results] = await pool.execute(sql, [email]);
+    const results = await reliableQuery(sql, [email]);
     return results[0] || null;
   }
 

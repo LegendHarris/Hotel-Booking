@@ -16,7 +16,9 @@ const User = require('./models/User');
 
 // Import middleware
 const { securityHeaders, createRateLimit, sanitizeInput } = require('./middleware/security');
-const { compressionMiddleware, responseTime, cacheMiddleware } = require('./middleware/performance');
+const { compressionMiddleware, responseTime } = require('./middleware/performance');
+const { cacheResponse } = require('./middleware/caching');
+const { handleDatabaseError, checkDatabaseHealth } = require('./middleware/reliability');
 
 dotenv.config();
 
@@ -83,9 +85,23 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
+  const dbHealth = await checkDatabaseHealth();
+  res.json({
+    success: true,
+    message: 'System health check',
+    data: {
+      server: 'healthy',
+      database: dbHealth.healthy ? 'healthy' : 'unhealthy',
+      timestamp: new Date().toISOString()
+    }
+  });
+});
+
 // Enhanced API Routes
 app.use('/api/auth', createRateLimit(15 * 60 * 1000, 5), enhancedAuthRoutes);
-app.use('/api/hotels', cacheMiddleware(5 * 60 * 1000), enhancedHotelRoutes);
+app.use('/api/hotels', cacheResponse(300000), enhancedHotelRoutes);
 
 // Currency routes
 app.get('/api/currency/convert', currencyController.convertCurrency);
@@ -151,21 +167,33 @@ app.get('*', (req, res) => {
   res.sendFile(indexPath);
 });
 
+// Database error handler
+app.use(handleDatabaseError);
+
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
   
   if (err.type === 'entity.parse.failed') {
-    return res.status(400).json({ error: 'Invalid JSON payload' });
+    return res.status(400).json({ 
+      success: false,
+      message: 'Invalid JSON payload',
+      data: null
+    });
   }
   
   if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(413).json({ error: 'File too large' });
+    return res.status(413).json({ 
+      success: false,
+      message: 'File too large',
+      data: null
+    });
   }
   
   res.status(500).json({ 
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    success: false,
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+    data: null
   });
 });
 
