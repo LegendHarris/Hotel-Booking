@@ -1,14 +1,14 @@
 const jwt = require('jsonwebtoken');
 const EnhancedUser = require('../models/EnhancedUser');
 const { validateInput } = require('../middleware/security');
+const emailService = require('../services/emailService');
 
 class EnhancedAuthController {
-  // User registration
+  // User registration with email verification
   static async signup(req, res) {
     try {
       const { email, password, first_name, last_name, phone } = req.body;
 
-      // Validate required fields
       if (!email || !password || !first_name || !last_name) {
         return res.status(400).json({
           success: false,
@@ -17,7 +17,6 @@ class EnhancedAuthController {
         });
       }
 
-      // Check if user already exists
       const existingUser = await EnhancedUser.findByEmail(email);
       if (existingUser) {
         return res.status(409).json({
@@ -27,46 +26,32 @@ class EnhancedAuthController {
         });
       }
 
-      // Create new user
+      const verificationCode = emailService.generateVerificationCode();
+      
       const userData = {
         email,
         password,
-        role: 'user', // Default role
+        role: 'user',
         first_name,
         last_name,
-        phone
+        phone,
+        is_verified: false,
+        verification_code: verificationCode
       };
 
       await EnhancedUser.create(userData);
       
-      // Get created user (without password)
-      const newUser = await EnhancedUser.findByEmail(email);
+      // Send verification email
+      const emailResult = await emailService.sendVerificationEmail(email, verificationCode);
       
-      // Generate JWT token
-      const token = jwt.sign(
-        { 
-          userId: newUser.id, 
-          email: newUser.email, 
-          role: newUser.role 
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
+      if (!emailResult.success) {
+        console.error('Failed to send verification email:', emailResult.error);
+      }
 
       res.status(201).json({
         success: true,
-        message: 'User registered successfully',
-        data: {
-          user: {
-            id: newUser.id,
-            email: newUser.email,
-            role: newUser.role,
-            first_name: newUser.first_name,
-            last_name: newUser.last_name,
-            phone: newUser.phone
-          },
-          token
-        }
+        message: 'Verification code sent to your email',
+        data: null
       });
 
     } catch (error) {
@@ -79,12 +64,59 @@ class EnhancedAuthController {
     }
   }
 
-  // User login
+  // Email verification
+  static async verify(req, res) {
+    try {
+      const { email, code } = req.body;
+
+      if (!email || !code) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email and verification code are required',
+          data: null
+        });
+      }
+
+      const user = await EnhancedUser.findByEmailWithVerification(email);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+          data: null
+        });
+      }
+
+      if (user.verification_code !== code) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid verification code',
+          data: null
+        });
+      }
+
+      await EnhancedUser.verifyUser(user.id);
+
+      res.json({
+        success: true,
+        message: 'Email verified successfully',
+        data: null
+      });
+
+    } catch (error) {
+      console.error('Verification error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        data: null
+      });
+    }
+  }
+
+  // User login (only verified users)
   static async login(req, res) {
     try {
       const { email, password } = req.body;
 
-      // Validate required fields
       if (!email || !password) {
         return res.status(400).json({
           success: false,
@@ -93,8 +125,7 @@ class EnhancedAuthController {
         });
       }
 
-      // Find user by email
-      const user = await EnhancedUser.findByEmail(email);
+      const user = await EnhancedUser.findByEmailWithVerification(email);
       if (!user) {
         return res.status(401).json({
           success: false,
@@ -103,7 +134,14 @@ class EnhancedAuthController {
         });
       }
 
-      // Verify password
+      if (!user.is_verified) {
+        return res.status(401).json({
+          success: false,
+          message: 'Please verify your email before logging in',
+          data: null
+        });
+      }
+
       const isValidPassword = await EnhancedUser.verifyPassword(password, user.password);
       if (!isValidPassword) {
         return res.status(401).json({
@@ -113,7 +151,6 @@ class EnhancedAuthController {
         });
       }
 
-      // Generate JWT token
       const token = jwt.sign(
         { 
           userId: user.id, 

@@ -1,32 +1,48 @@
-// Frontend Fetch Examples for Hotel Reservation Platform API
+// Enhanced Frontend Fetch Examples with Email Verification
 
-const API_BASE = "http://localhost:3001/api";
+const API_BASE = "http://localhost:3002/api";
 
-// Example 1: User Signup
-async function signup(email, password) {
+// Example 1: User Signup (sends verification email)
+async function signup(email, password, firstName, lastName, phone) {
   try {
     const response = await fetch(`${API_BASE}/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ 
+        email, 
+        password, 
+        first_name: firstName, 
+        last_name: lastName, 
+        phone 
+      }),
     });
-    const status = response.status;
     const data = await response.json();
-    if (data.success && data.data && data.data.token && data.data.user) {
-      localStorage.setItem("token", data.data.token);
-      localStorage.setItem("user", JSON.stringify(data.data.user));
-      console.log("Signup successful, token and user saved");
-    } else {
-      console.warn("Signup failed:", data.message || data.error);
-    }
-    return { ...data, status };
+    console.log("Signup result:", data.message);
+    return data;
   } catch (error) {
     console.error("Signup error:", error);
-    return { success: false, error: error.message };
+    return { success: false, message: error.message };
   }
 }
 
-// Example 2: User Login
+// Example 2: Email Verification
+async function verifyEmail(email, code) {
+  try {
+    const response = await fetch(`${API_BASE}/auth/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code }),
+    });
+    const data = await response.json();
+    console.log("Verification result:", data.message);
+    return data;
+  } catch (error) {
+    console.error("Verification error:", error);
+    return { success: false, message: error.message };
+  }
+}
+
+// Example 3: User Login (only verified users)
 async function login(email, password) {
   try {
     const response = await fetch(`${API_BASE}/auth/login`, {
@@ -36,21 +52,21 @@ async function login(email, password) {
     });
     const status = response.status;
     const data = await response.json();
-    if (data.success && data.data && data.data.token && data.data.user) {
+    if (data.success && data.data && data.data.token) {
       localStorage.setItem("token", data.data.token);
       localStorage.setItem("user", JSON.stringify(data.data.user));
-      console.log("Login successful, token and user saved");
+      console.log("Login successful");
     } else {
-      console.warn("Login failed:", data.message || data.error);
+      console.warn("Login failed:", data.message);
     }
     return { ...data, status };
   } catch (error) {
     console.error("Login error:", error);
-    return { success: false, error: error.message };
+    return { success: false, message: error.message };
   }
 }
 
-// Example 3: Get All Hotels with Filters
+// Example 4: Get All Hotels with Filters
 async function getHotels(filters = {}) {
   const queryParams = new URLSearchParams(filters);
   try {
@@ -63,7 +79,7 @@ async function getHotels(filters = {}) {
   }
 }
 
-// Example 4: Get Hotel by ID
+// Example 5: Get Hotel by ID
 async function getHotelById(id) {
   try {
     const response = await fetch(`${API_BASE}/hotels/${id}`);
@@ -75,7 +91,7 @@ async function getHotelById(id) {
   }
 }
 
-// Example 5: Create Hotel (Admin only)
+// Example 6: Create Hotel (Admin only)
 async function createHotel(hotelData) {
   const token = localStorage.getItem("token");
   try {
@@ -95,7 +111,7 @@ async function createHotel(hotelData) {
   }
 }
 
-// Example 6: Update Hotel (Admin only)
+// Example 7: Update Hotel (Admin only)
 async function updateHotel(id, updateData) {
   const token = localStorage.getItem("token");
   try {
@@ -115,7 +131,7 @@ async function updateHotel(id, updateData) {
   }
 }
 
-// Example 7: Delete Hotel (Admin only)
+// Example 8: Delete Hotel (Admin only)
 async function deleteHotel(id) {
   const token = localStorage.getItem("token");
   try {
@@ -133,7 +149,7 @@ async function deleteHotel(id) {
   }
 }
 
-// Example 8: Get African Countries
+// Example 9: Get African Countries
 async function getCountries() {
   try {
     const response = await fetch(`${API_BASE}/hotels/countries`);
@@ -145,7 +161,7 @@ async function getCountries() {
   }
 }
 
-// Example 9: Convert Currency
+// Example 10: Convert Currency
 async function convertCurrency(from, to, amount) {
   try {
     const response = await fetch(
@@ -159,7 +175,7 @@ async function convertCurrency(from, to, amount) {
   }
 }
 
-// Example 10: Get All Transactions (Admin only)
+// Example 11: Get All Transactions (Admin only)
 async function getTransactions() {
   const token = localStorage.getItem("token");
   try {
@@ -177,8 +193,9 @@ async function getTransactions() {
 }
 
 // Usage Examples:
-// signup('user@example.com', 'password123');
-// login('solutionlegend9@gmail.com', 'Legend07');
+// signup('user@example.com', 'password123', 'John', 'Doe', '+1234567890');
+// verifyEmail('user@example.com', '123456');
+// login('user@example.com', 'password123');
 // getHotels({ country: 'Nigeria', page: 1, limit: 10, sort: 'price_per_night:asc' });
 // getHotelById(1);
 // createHotel({ name: 'New Hotel', country: 'Nigeria', city: 'Lagos', price_per_night: 150, currency: 'USD', description: 'Nice hotel' });

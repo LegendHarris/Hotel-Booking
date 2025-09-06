@@ -3,25 +3,36 @@ const { pool } = require('../middleware/performance');
 
 class EnhancedUser {
   static async create(userData) {
-    const { email, password, role = 'user', first_name, last_name, phone } = userData;
+    const { email, password, role = 'user', first_name, last_name, phone, is_verified = false, verification_code } = userData;
     
-    // Hash password
     const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     
     const sql = `
-      INSERT INTO users (email, password, role, first_name, last_name, phone) 
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO users (email, password, role, first_name, last_name, phone, is_verified, verification_code) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
-    const [result] = await pool.execute(sql, [email, hashedPassword, role, first_name, last_name, phone]);
+    const [result] = await pool.execute(sql, [email, hashedPassword, role, first_name, last_name, phone, is_verified, verification_code]);
     return result;
   }
 
   static async findByEmail(email) {
+    const sql = 'SELECT id, email, role, first_name, last_name, phone, created_at FROM users WHERE email = ? AND is_active = TRUE LIMIT 1';
+    const [results] = await pool.execute(sql, [email]);
+    return results[0] || null;
+  }
+
+  static async findByEmailWithVerification(email) {
     const sql = 'SELECT * FROM users WHERE email = ? AND is_active = TRUE LIMIT 1';
     const [results] = await pool.execute(sql, [email]);
     return results[0] || null;
+  }
+
+  static async verifyUser(id) {
+    const sql = 'UPDATE users SET is_verified = TRUE, verification_code = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+    const [result] = await pool.execute(sql, [id]);
+    return result;
   }
 
   static async findById(id) {

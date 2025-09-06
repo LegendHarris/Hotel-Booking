@@ -14,6 +14,14 @@ router.post('/signup',
   EnhancedAuthController.signup
 );
 
+router.post('/verify',
+  validateInput({
+    email: { required: true, email: true },
+    code: { required: true, minLength: 6, maxLength: 6 }
+  }),
+  EnhancedAuthController.verify
+);
+
 router.post('/login',
   validateInput({
     email: { required: true, email: true },
