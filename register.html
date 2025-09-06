@@ -90,62 +90,243 @@
     <footer id="footer"></footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="frontend-optimization.js"></script>
+    <script src="enhanced-auth.js"></script>
     <script src="utils.js"></script>
     <script src="auth.js"></script>
     <script src="main.js"></script>
     
     <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initRegisterPage();
+        });
+        
         function initRegisterPage() {
             // Redirect if already logged in
-            if (auth.isLoggedIn()) {
-                const user = auth.getCurrentUser();
-                window.location.href = getDashboardUrl(user.role);
+            if (window.secureAuth && window.secureAuth.checkAuthStatus()) {
+                const user = window.secureAuth.getCurrentUser();
+                if (user) {
+                    window.location.href = getDashboardUrl(user.role);
+                    return;
+                }
+            }
+            
+            // Add real-time password validation
+            setupPasswordValidation();
+        }
+        
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const role = document.getElementById('role').value;
+            const terms = document.getElementById('terms').checked;
+            
+            // Validate required fields
+            if (!firstName || !lastName || !email || !phone || !password || !confirmPassword || !role) {
+                showAlert('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            if (!terms) {
+                showAlert('Please accept the Terms of Service and Privacy Policy', 'error');
+                return;
+            }
+            
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showAlert('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            // Validate password strength
+            if (password.length < 8) {
+                showAlert('Password must be at least 8 characters long', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showAlert('Passwords do not match', 'error');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
+            submitBtn.disabled = true;
+            
+            try {
+                const userData = {
+                    username: `${firstName} ${lastName}`,
+                    first_name: firstName,
+                    last_name: lastName,
+                    email: email,
+                    phone: phone,
+                    password: password,
+                    role: role
+                };
+                
+                let result;
+                if (window.secureAuth) {
+                    result = await window.secureAuth.register(userData);
+                } else {
+                    // Fallback registration
+                    result = await basicRegister(userData);
+                }
+                
+                if (result.success) {
+                    showAlert('Account created successfully! Please log in.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    showAlert(result.error || 'Registration failed. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAlert('An error occurred. Please try again.', 'error');
+            } finally {
+                // Reset button state
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
             }
         }
         
-        function handleRegister(event) {
-            event.preventDefault();
+        async function basicRegister(userData) {
+            // Demo registration - in real app, this would call the API
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Check if email already exists (demo)
+                const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                if (existingUsers.find(u => u.email === userData.email)) {
+                    return { success: false, error: 'Email already registered' };
+                }
+                
+                // Add to demo users
+                const newUser = { ...userData, id: Date.now() };
+                delete newUser.password; // Don't store password in demo
+                existingUsers.push(newUser);
+                localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
+                
+                return { success: true, user: newUser };
+            } catch (error) {
+                return { success: false, error: 'Registration failed' };
+            }
+        }
+        
+        function setupPasswordValidation() {
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
             
-            const formData = {
-                name: `${document.getElementById('firstName').value} ${document.getElementById('lastName').value}`,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                password: document.getElementById('password').value,
-                role: document.getElementById('role').value
-            };
-            
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            
-            // Validate form
-            const validation = utils.validators.validateForm(formData, {
-                name: [{ type: 'required' }],
-                email: [{ type: 'required' }, { type: 'email' }],
-                phone: [{ type: 'required' }, { type: 'phone' }],
-                password: [{ type: 'required' }, { type: 'password' }],
-                role: [{ type: 'required' }]
+            passwordInput.addEventListener('input', function() {
+                validatePasswordStrength(this.value);
             });
             
-            if (!validation.isValid) {
-                const firstError = Object.values(validation.errors)[0];
-                utils.showError(firstError);
+            confirmPasswordInput.addEventListener('input', function() {
+                validatePasswordMatch();
+            });
+        }
+        
+        function validatePasswordStrength(password) {
+            const strengthIndicator = document.getElementById('passwordStrength') || createPasswordStrengthIndicator();
+            
+            let strength = 0;
+            let feedback = [];
+            
+            if (password.length >= 8) strength++;
+            else feedback.push('At least 8 characters');
+            
+            if (/[A-Z]/.test(password)) strength++;
+            else feedback.push('One uppercase letter');
+            
+            if (/[a-z]/.test(password)) strength++;
+            else feedback.push('One lowercase letter');
+            
+            if (/\d/.test(password)) strength++;
+            else feedback.push('One number');
+            
+            const strengthLevels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+            const strengthColors = ['danger', 'warning', 'info', 'success', 'success'];
+            
+            strengthIndicator.className = `mt-1 text-${strengthColors[strength]}`;
+            strengthIndicator.textContent = `Password Strength: ${strengthLevels[strength]}`;
+            
+            if (feedback.length > 0 && password.length > 0) {
+                strengthIndicator.textContent += ` (Need: ${feedback.join(', ')})`;
+            }
+        }
+        
+        function createPasswordStrengthIndicator() {
+            const passwordInput = document.getElementById('password');
+            const indicator = document.createElement('div');
+            indicator.id = 'passwordStrength';
+            indicator.className = 'mt-1 text-muted';
+            passwordInput.parentNode.appendChild(indicator);
+            return indicator;
+        }
+        
+        function validatePasswordMatch() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const matchIndicator = document.getElementById('passwordMatch') || createPasswordMatchIndicator();
+            
+            if (confirmPassword.length === 0) {
+                matchIndicator.textContent = '';
                 return;
             }
             
-            if (formData.password !== confirmPassword) {
-                utils.showError('Passwords do not match');
-                return;
-            }
-            
-            const result = auth.register(formData);
-            
-            if (result.success) {
-                utils.showSuccess('Account created successfully!');
-                setTimeout(() => {
-                    window.location.href = getDashboardUrl(result.user.role);
-                }, 1000);
+            if (password === confirmPassword) {
+                matchIndicator.className = 'mt-1 text-success';
+                matchIndicator.textContent = '✓ Passwords match';
             } else {
-                utils.showError(result.message);
+                matchIndicator.className = 'mt-1 text-danger';
+                matchIndicator.textContent = '✗ Passwords do not match';
             }
+        }
+        
+        function createPasswordMatchIndicator() {
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const indicator = document.createElement('div');
+            indicator.id = 'passwordMatch';
+            indicator.className = 'mt-1 text-muted';
+            confirmPasswordInput.parentNode.appendChild(indicator);
+            return indicator;
+        }
+        
+        function getDashboardUrl(role) {
+            switch(role) {
+                case 'admin': return 'admin-dashboard.html';
+                case 'hotel_manager': 
+                case 'hotel_owner': return 'hotel-dashboard.html';
+                case 'user': default: return 'user-dashboard.html';
+            }
+        }
+        
+        function showAlert(message, type) {
+            // Remove existing alerts
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) existingAlert.remove();
+            
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            const form = document.getElementById('registerForm');
+            form.insertAdjacentHTML('beforebegin', alertHtml);
         }
     </script>
 </body>

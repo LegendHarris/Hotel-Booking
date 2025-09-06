@@ -1,12 +1,18 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
 
-// Import routes
-const authRoutes = require('./routes/authRoutes');
-const hotelRoutes = require('./routes/hotelRoutes');
-const bookingRoutes = require('./routes/bookingRoutes');
+// Import enhanced routes
+const enhancedAuthRoutes = require('./routes/enhancedAuthRoutes');
+const enhancedHotelRoutes = require('./routes/enhancedHotelRoutes');
+const currencyController = require('./controllers/currencyController');
+const transactionController = require('./controllers/transactionController');
+const EnhancedAuthController = require('./controllers/enhancedAuthController');
+const EnhancedUser = require('./models/EnhancedUser');
+const transactionRoutes = require('./routes/transactionRoutes');
+
+// Import models for seeding
+const User = require('./models/User');
 
 // Import middleware
 const { securityHeaders, createRateLimit, sanitizeInput } = require('./middleware/security');
@@ -63,10 +69,69 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Routes with caching where appropriate
-app.use('/api/auth', createRateLimit(15 * 60 * 1000, 5), authRoutes);
-app.use('/api/hotels', cacheMiddleware(5 * 60 * 1000), hotelRoutes);
-app.use('/api/bookings', bookingRoutes);
+// Initialize database and seed admin
+app.use(async (req, res, next) => {
+  if (!app.locals.dbInitialized) {
+    try {
+      await EnhancedUser.seedDefaultAdmin();
+      app.locals.dbInitialized = true;
+      console.log('✅ Database initialized successfully');
+    } catch (error) {
+      console.error('❌ Database initialization failed:', error.message);
+    }
+  }
+  next();
+});
+
+// Enhanced API Routes
+app.use('/api/auth', createRateLimit(15 * 60 * 1000, 5), enhancedAuthRoutes);
+app.use('/api/hotels', cacheMiddleware(5 * 60 * 1000), enhancedHotelRoutes);
+
+// Currency routes
+app.get('/api/currency/convert', currencyController.convertCurrency);
+app.get('/api/currency/supported', currencyController.getSupportedCurrencies);
+app.get('/api/countries', currencyController.getAfricanCountries);
+app.get('/api/countries/:code', currencyController.getCountryByCode);
+
+// Transaction routes
+app.get('/api/transactions', 
+  EnhancedAuthController.verifyToken,
+  EnhancedAuthController.requireAdmin,
+  transactionController.getAllTransactions
+);
+
+app.get('/api/transactions/my', 
+  EnhancedAuthController.verifyToken,
+  transactionController.getUserTransactions
+);
+
+app.get('/api/transactions/:id', 
+  EnhancedAuthController.verifyToken,
+  transactionController.getTransactionById
+);
+
+app.get('/api/transactions/ref/:reference', 
+  EnhancedAuthController.verifyToken,
+  transactionController.getTransactionByReference
+);
+
+app.post('/api/transactions', 
+  EnhancedAuthController.verifyToken,
+  transactionController.createTransaction
+);
+
+app.put('/api/transactions/:id/status', 
+  EnhancedAuthController.verifyToken,
+  EnhancedAuthController.requireAdmin,
+  transactionController.updateTransactionStatus
+);
+
+app.get('/api/transactions/stats', 
+  EnhancedAuthController.verifyToken,
+  EnhancedAuthController.requireAdmin,
+  transactionController.getTransactionStats
+);
+app.use('/api/transactions', transactionRoutes);
 
 // Root endpoint
 const path = require('path');
@@ -125,4 +190,13 @@ const server = app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
   console.log(`📊 Health check: http://localhost:${port}/health`);
   console.log(`🌐 API Base: http://localhost:${port}/api`);
+
+  // Seed default admin user
+  User.seedAdmin((err, result) => {
+    if (err) {
+      console.error('Error seeding admin:', err);
+    } else {
+      console.log('Admin seeding result:', result);
+    }
+  });
 });
