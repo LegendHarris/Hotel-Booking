@@ -21,7 +21,7 @@ const { compressionMiddleware, responseTime, cacheMiddleware } = require('./midd
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3002;
 
 // Trust proxy for rate limiting behind reverse proxy
 app.set('trust proxy', 1);

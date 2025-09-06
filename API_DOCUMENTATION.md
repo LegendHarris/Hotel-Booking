@@ -1,18 +1,23 @@
 # Hotel Reservation Platform API Documentation
 
 ## Base URL
+
 ```
 http://localhost:3001/api
 ```
 
 ## Authentication
+
 All protected endpoints require a JWT token in the Authorization header:
+
 ```
 Authorization: Bearer <your_jwt_token>
 ```
 
 ## Standard Response Format
+
 All API responses follow this format:
+
 ```json
 {
   "success": true/false,
@@ -26,9 +31,11 @@ All API responses follow this format:
 ## Authentication Endpoints
 
 ### POST /api/auth/signup
+
 Register a new user account.
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -40,6 +47,7 @@ Register a new user account.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -59,9 +67,11 @@ Register a new user account.
 ```
 
 ### POST /api/auth/login
+
 Authenticate user and get JWT token.
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -70,6 +80,7 @@ Authenticate user and get JWT token.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -88,14 +99,17 @@ Authenticate user and get JWT token.
 ```
 
 ### GET /api/auth/profile
+
 Get current user profile (Protected).
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -118,9 +132,11 @@ Authorization: Bearer <token>
 ## Hotel Endpoints
 
 ### GET /api/hotels
+
 Get all hotels with filtering, pagination, and sorting.
 
 **Query Parameters:**
+
 - `page` (number): Page number (default: 1)
 - `limit` (number): Items per page (default: 20)
 - `sort` (string): Sort field (name, price, rating, created_at)
@@ -133,11 +149,13 @@ Get all hotels with filtering, pagination, and sorting.
 - `search` (string): Search in name, description, city, country
 
 **Example:**
+
 ```
 GET /api/hotels?page=1&limit=10&country=Nigeria&min_price=100&sort=price&order=asc
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -151,7 +169,7 @@ GET /api/hotels?page=1&limit=10&country=Nigeria&min_price=100&sort=price&order=a
         "country": "Nigeria",
         "city": "Lagos",
         "address": "Victoria Island, Lagos",
-        "price": 250.00,
+        "price": 250.0,
         "currency": "USD",
         "rating": 4.5,
         "total_rooms": 200,
@@ -172,9 +190,11 @@ GET /api/hotels?page=1&limit=10&country=Nigeria&min_price=100&sort=price&order=a
 ```
 
 ### GET /api/hotels/:id
+
 Get hotel details by ID.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -187,7 +207,7 @@ Get hotel details by ID.
       "country": "Nigeria",
       "city": "Lagos",
       "address": "Victoria Island, Lagos",
-      "price": 250.00,
+      "price": 250.0,
       "currency": "USD",
       "rating": 4.5,
       "total_rooms": 200,
@@ -200,14 +220,17 @@ Get hotel details by ID.
 ```
 
 ### POST /api/hotels (Admin Only)
+
 Create a new hotel.
 
 **Headers:**
+
 ```
 Authorization: Bearer <admin_token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "name": "New Hotel",
@@ -215,7 +238,7 @@ Authorization: Bearer <admin_token>
   "country": "Nigeria",
   "city": "Lagos",
   "address": "Hotel address",
-  "price": 200.00,
+  "price": 200.0,
   "currency": "USD",
   "rating": 4.0,
   "total_rooms": 100,
@@ -226,9 +249,11 @@ Authorization: Bearer <admin_token>
 ```
 
 ### PUT /api/hotels/:id (Admin Only)
+
 Update hotel details.
 
 **Headers:**
+
 ```
 Authorization: Bearer <admin_token>
 ```
@@ -236,9 +261,11 @@ Authorization: Bearer <admin_token>
 **Request Body:** Same as POST (partial updates allowed)
 
 ### DELETE /api/hotels/:id (Admin Only)
+
 Delete a hotel (soft delete).
 
 **Headers:**
+
 ```
 Authorization: Bearer <admin_token>
 ```
@@ -248,19 +275,23 @@ Authorization: Bearer <admin_token>
 ## Currency Endpoints
 
 ### GET /api/currency/convert
+
 Convert currency amounts.
 
 **Query Parameters:**
+
 - `from` (string): Source currency code (e.g., USD)
 - `to` (string): Target currency code (e.g., NGN)
 - `amount` (number): Amount to convert
 
 **Example:**
+
 ```
 GET /api/currency/convert?from=USD&to=NGN&amount=100
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -277,9 +308,11 @@ GET /api/currency/convert?from=USD&to=NGN&amount=100
 ```
 
 ### GET /api/currency/supported
+
 Get list of supported currencies.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -298,9 +331,11 @@ Get list of supported currencies.
 ## Countries Endpoints
 
 ### GET /api/countries
+
 Get all African countries with currency information.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -321,9 +356,11 @@ Get all African countries with currency information.
 ```
 
 ### GET /api/countries/:code
+
 Get country details by country code.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -346,14 +383,17 @@ Get country details by country code.
 ## Transaction Endpoints
 
 ### GET /api/transactions (Admin Only)
+
 Get all transactions with filtering.
 
 **Headers:**
+
 ```
 Authorization: Bearer <admin_token>
 ```
 
 **Query Parameters:**
+
 - `page`, `limit`: Pagination
 - `status`: Filter by status (pending, completed, failed, cancelled)
 - `transaction_type`: Filter by type (booking, refund, payment)
@@ -362,26 +402,31 @@ Authorization: Bearer <admin_token>
 - `date_from`, `date_to`: Date range filter
 
 ### GET /api/transactions/my (Protected)
+
 Get current user's transactions.
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 ### POST /api/transactions (Protected)
+
 Create a new transaction.
 
 **Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "hotel_id": 1,
-  "amount": 250.00,
+  "amount": 250.0,
   "currency": "USD",
   "transaction_type": "booking",
   "metadata": {
@@ -395,42 +440,49 @@ Authorization: Bearer <token>
 ## Frontend JavaScript Examples
 
 ### Authentication
+
 ```javascript
 // Login
 async function login(email, password) {
-  const response = await fetch('/api/auth/login', {
-    method: 'POST',
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password }),
   });
-  
+
   const result = await response.json();
-  
-  if (result.success) {
-    localStorage.setItem('token', result.data.token);
-    localStorage.setItem('user', JSON.stringify(result.data.user));
+
+  if (result.success && result.data && result.data.token && result.data.user) {
+    localStorage.setItem("token", result.data.token);
+    localStorage.setItem("user", JSON.stringify(result.data.user));
   }
-  
+
   return result;
 }
 
 // Register
 async function register(userData) {
-  const response = await fetch('/api/auth/signup', {
-    method: 'POST',
+  const response = await fetch("/api/auth/signup", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(userData)
+    body: JSON.stringify(userData),
   });
-  
-  return await response.json();
+
+  const result = await response.json();
+  if (result.success && result.data && result.data.token && result.data.user) {
+    localStorage.setItem("token", result.data.token);
+    localStorage.setItem("user", JSON.stringify(result.data.user));
+  }
+  return result;
 }
 ```
 
 ### Hotels
+
 ```javascript
 // Get hotels with filters
 async function getHotels(filters = {}) {
@@ -447,64 +499,68 @@ async function getHotel(id) {
 
 // Create hotel (admin)
 async function createHotel(hotelData) {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch('/api/hotels', {
-    method: 'POST',
+  const token = localStorage.getItem("token");
+
+  const response = await fetch("/api/hotels", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(hotelData)
+    body: JSON.stringify(hotelData),
   });
-  
+
   return await response.json();
 }
 ```
 
 ### Currency Conversion
+
 ```javascript
 // Convert currency
 async function convertCurrency(from, to, amount) {
-  const response = await fetch(`/api/currency/convert?from=${from}&to=${to}&amount=${amount}`);
+  const response = await fetch(
+    `/api/currency/convert?from=${from}&to=${to}&amount=${amount}`
+  );
   return await response.json();
 }
 
 // Get countries
 async function getCountries() {
-  const response = await fetch('/api/countries');
+  const response = await fetch("/api/countries");
   return await response.json();
 }
 ```
 
 ### Transactions
+
 ```javascript
 // Create transaction
 async function createTransaction(transactionData) {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch('/api/transactions', {
-    method: 'POST',
+  const token = localStorage.getItem("token");
+
+  const response = await fetch("/api/transactions", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(transactionData)
+    body: JSON.stringify(transactionData),
   });
-  
+
   return await response.json();
 }
 
 // Get user transactions
 async function getUserTransactions() {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch('/api/transactions/my', {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch("/api/transactions/my", {
     headers: {
-      'Authorization': `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   });
-  
+
   return await response.json();
 }
 ```

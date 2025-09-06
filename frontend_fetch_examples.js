@@ -1,22 +1,28 @@
 // Frontend Fetch Examples for Hotel Reservation Platform API
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = "http://localhost:3001/api";
 
 // Example 1: User Signup
 async function signup(email, password) {
   try {
     const response = await fetch(`${API_BASE}/auth/signup`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, password })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
+    const status = response.status;
     const data = await response.json();
-    console.log('Signup result:', data);
-    return data;
+    if (data.success && data.data && data.data.token && data.data.user) {
+      localStorage.setItem("token", data.data.token);
+      localStorage.setItem("user", JSON.stringify(data.data.user));
+      console.log("Signup successful, token and user saved");
+    } else {
+      console.warn("Signup failed:", data.message || data.error);
+    }
+    return { ...data, status };
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error("Signup error:", error);
+    return { success: false, error: error.message };
   }
 }
 
@@ -24,20 +30,23 @@ async function signup(email, password) {
 async function login(email, password) {
   try {
     const response = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, password })
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
+    const status = response.status;
     const data = await response.json();
-    if (data.success) {
-      localStorage.setItem('token', data.data.token);
-      console.log('Login successful, token saved');
+    if (data.success && data.data && data.data.token && data.data.user) {
+      localStorage.setItem("token", data.data.token);
+      localStorage.setItem("user", JSON.stringify(data.data.user));
+      console.log("Login successful, token and user saved");
+    } else {
+      console.warn("Login failed:", data.message || data.error);
     }
-    return data;
+    return { ...data, status };
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
+    return { success: false, error: error.message };
   }
 }
 
@@ -47,10 +56,10 @@ async function getHotels(filters = {}) {
   try {
     const response = await fetch(`${API_BASE}/hotels?${queryParams}`);
     const data = await response.json();
-    console.log('Hotels:', data);
+    console.log("Hotels:", data);
     return data;
   } catch (error) {
-    console.error('Get hotels error:', error);
+    console.error("Get hotels error:", error);
   }
 }
 
@@ -59,68 +68,68 @@ async function getHotelById(id) {
   try {
     const response = await fetch(`${API_BASE}/hotels/${id}`);
     const data = await response.json();
-    console.log('Hotel details:', data);
+    console.log("Hotel details:", data);
     return data;
   } catch (error) {
-    console.error('Get hotel error:', error);
+    console.error("Get hotel error:", error);
   }
 }
 
 // Example 5: Create Hotel (Admin only)
 async function createHotel(hotelData) {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   try {
     const response = await fetch(`${API_BASE}/hotels`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(hotelData)
+      body: JSON.stringify(hotelData),
     });
     const data = await response.json();
-    console.log('Create hotel result:', data);
+    console.log("Create hotel result:", data);
     return data;
   } catch (error) {
-    console.error('Create hotel error:', error);
+    console.error("Create hotel error:", error);
   }
 }
 
 // Example 6: Update Hotel (Admin only)
 async function updateHotel(id, updateData) {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   try {
     const response = await fetch(`${API_BASE}/hotels/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(updateData)
+      body: JSON.stringify(updateData),
     });
     const data = await response.json();
-    console.log('Update hotel result:', data);
+    console.log("Update hotel result:", data);
     return data;
   } catch (error) {
-    console.error('Update hotel error:', error);
+    console.error("Update hotel error:", error);
   }
 }
 
 // Example 7: Delete Hotel (Admin only)
 async function deleteHotel(id) {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   try {
     const response = await fetch(`${API_BASE}/hotels/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
     const data = await response.json();
-    console.log('Delete hotel result:', data);
+    console.log("Delete hotel result:", data);
     return data;
   } catch (error) {
-    console.error('Delete hotel error:', error);
+    console.error("Delete hotel error:", error);
   }
 }
 
@@ -129,39 +138,41 @@ async function getCountries() {
   try {
     const response = await fetch(`${API_BASE}/hotels/countries`);
     const data = await response.json();
-    console.log('Countries:', data);
+    console.log("Countries:", data);
     return data;
   } catch (error) {
-    console.error('Get countries error:', error);
+    console.error("Get countries error:", error);
   }
 }
 
 // Example 9: Convert Currency
 async function convertCurrency(from, to, amount) {
   try {
-    const response = await fetch(`${API_BASE}/hotels/currency/convert?from=${from}&to=${to}&amount=${amount}`);
+    const response = await fetch(
+      `${API_BASE}/hotels/currency/convert?from=${from}&to=${to}&amount=${amount}`
+    );
     const data = await response.json();
-    console.log('Currency conversion:', data);
+    console.log("Currency conversion:", data);
     return data;
   } catch (error) {
-    console.error('Currency conversion error:', error);
+    console.error("Currency conversion error:", error);
   }
 }
 
 // Example 10: Get All Transactions (Admin only)
 async function getTransactions() {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   try {
     const response = await fetch(`${API_BASE}/transactions`, {
       headers: {
-        'Authorization': `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
     const data = await response.json();
-    console.log('Transactions:', data);
+    console.log("Transactions:", data);
     return data;
   } catch (error) {
-    console.error('Get transactions error:', error);
+    console.error("Get transactions error:", error);
   }
 }
 
