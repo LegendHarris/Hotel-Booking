@@ -1,0 +1,219 @@
+/* Enhanced Dark Mode Styles for Better Clarity */
+
+[data-theme="dark"] {
+  /* Enhanced dark mode card styles */
+  .card {
+    background-color: #1e293b;
+    border: 1px solid #475569;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
+  }
+
+  .card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Enhanced navbar for dark mode */
+  .navbar {
+    background-color: #0f172a !important;
+    border-bottom: 1px solid #475569;
+    backdrop-filter: blur(10px);
+  }
+
+  /* Enhanced form controls */
+  .form-control, .form-select {
+    background-color: #1e293b;
+    border: 1px solid #475569;
+    color: #f1f5f9;
+  }
+
+  .form-control:focus, .form-select:focus {
+    background-color: #1e293b;
+    border-color: #3b82f6;
+    color: #f1f5f9;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+  }
+
+  .form-control::placeholder {
+    color: #94a3b8;
+  }
+
+  /* Enhanced buttons */
+  .btn-outline-secondary {
+    border-color: #64748b;
+    color: #94a3b8;
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: #64748b;
+    border-color: #64748b;
+    color: #f1f5f9;
+  }
+
+  /* Enhanced text colors */
+  .text-muted {
+    color: #94a3b8 !important;
+  }
+
+  .text-secondary {
+    color: #64748b !important;
+  }
+
+  /* Enhanced alerts */
+  .alert-success {
+    background-color: rgba(34, 197, 94, 0.1);
+    border-color: #22c55e;
+    color: #86efac;
+  }
+
+  .alert-danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+    color: #fca5a5;
+  }
+
+  .alert-warning {
+    background-color: rgba(234, 179, 8, 0.1);
+    border-color: #eab308;
+    color: #fde047;
+  }
+
+  .alert-info {
+    background-color: rgba(6, 182, 212, 0.1);
+    border-color: #06b6d4;
+    color: #67e8f9;
+  }
+
+  /* Enhanced table styles */
+  .table {
+    color: #f1f5f9;
+  }
+
+  .table-dark {
+    background-color: #1e293b;
+    border-color: #475569;
+  }
+
+  .table-dark th,
+  .table-dark td {
+    border-color: #475569;
+  }
+
+  /* Enhanced dropdown */
+  .dropdown-menu {
+    background-color: #1e293b;
+    border: 1px solid #475569;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  }
+
+  .dropdown-item {
+    color: #f1f5f9;
+  }
+
+  .dropdown-item:hover {
+    background-color: #334155;
+    color: #f1f5f9;
+  }
+
+  /* Enhanced modal */
+  .modal-content {
+    background-color: #1e293b;
+    border: 1px solid #475569;
+  }
+
+  .modal-header {
+    border-bottom: 1px solid #475569;
+  }
+
+  .modal-footer {
+    border-top: 1px solid #475569;
+  }
+
+  /* Enhanced badges */
+  .badge {
+    background-color: #3b82f6 !important;
+    color: #f1f5f9 !important;
+  }
+
+  .badge.bg-success {
+    background-color: #22c55e !important;
+  }
+
+  .badge.bg-danger {
+    background-color: #ef4444 !important;
+  }
+
+  .badge.bg-warning {
+    background-color: #eab308 !important;
+    color: #0f172a !important;
+  }
+
+  /* Enhanced list group */
+  .list-group-item {
+    background-color: #1e293b;
+    border: 1px solid #475569;
+    color: #f1f5f9;
+  }
+
+  .list-group-item:hover {
+    background-color: #334155;
+  }
+
+  .list-group-item.active {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+}
+
+/* Dark mode toggle improvements */
+.theme-toggle {
+  position: relative;
+  width: 50px;
+  height: 25px;
+  background-color: var(--border-color);
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.theme-toggle::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 21px;
+  height: 21px;
+  background-color: var(--bg-color);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .theme-toggle {
+  background-color: #3b82f6;
+}
+
+[data-theme="dark"] .theme-toggle::before {
+  transform: translateX(25px);
+  background-color: #f1f5f9;
+}
+
+/* Enhanced scrollbar for dark mode */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
