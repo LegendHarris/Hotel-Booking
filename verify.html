@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - Hotel Reservation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">🏨 Hotel Reservation</a>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h3>Verify Your Email</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="message"></div>
+                        <p class="text-center">Enter the 6-digit verification code sent to your email</p>
+                        <form id="verifyForm">
+                            <div class="mb-3">
+                                <label class="form-label">Verification Code</label>
+                                <input type="text" class="form-control text-center" id="code" maxlength="6" required style="font-size: 1.5rem; letter-spacing: 0.5rem;">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Verify Email</button>
+                        </form>
+                        <div class="text-center mt-3">
+                            <p><a href="signup.html">Back to Sign Up</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const email = localStorage.getItem('verificationEmail');
+            if (!email) {
+                window.location.href = 'signup.html';
+            }
+        });
+
+        document.getElementById('verifyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = localStorage.getItem('verificationEmail');
+            const code = document.getElementById('code').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, code })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('Email verified successfully!', 'success');
+                    localStorage.removeItem('verificationEmail');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    showMessage(result.message, 'danger');
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.', 'danger');
+            }
+        });
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        }
+    </script>
+</body>
+</html>
